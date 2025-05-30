@@ -1,0 +1,33 @@
+name: Feature Request
+description: Suggest a new utility or enhancement
+title: '[Feature]: '
+labels: ['enhancement']
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for contributing ideas! Help us understand your proposal clearly.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      placeholder: Describe the scenario or pain point.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Describe the solution you'd like
+      placeholder: What should be added or changed?
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      placeholder: Are there other ways you could work around this?

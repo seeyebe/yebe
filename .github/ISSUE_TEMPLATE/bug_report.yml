@@ -1,0 +1,45 @@
+name: Bug Report
+description: Report an unexpected behavior or problem
+title: '[Bug]: '
+labels: ['bug']
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug! Please complete the information below to help us reproduce and fix it.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the bug
+      placeholder: What happened? What did you expect to happen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Use function X
+        2. With parameters Y
+        3. See unexpected result Z
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      placeholder: Node version, discord.js version, OS, etc.
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs or errors
+      render: shell
+      placeholder: Paste error messages or logs here

@@ -1,0 +1,18 @@
+## Description
+
+Briefly explain what this PR changes and why.
+
+## Related Issues
+
+Closes #[issue_number] (if applicable)
+
+## Checklist
+
+- [ ] I ran `npm run lint` and `npm run test`
+- [ ] I updated the documentation where necessary
+- [ ] I have added or updated tests
+- [ ] This pull request is ready for review
+
+## Additional Notes
+
+(Optional) Anything else reviewers should know?

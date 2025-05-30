@@ -1,0 +1,36 @@
+{
+  "name": "yebe",
+  "version": "1.0.9",
+  "description": "Reusable utilities for Discord bot development in TypeScript.",
+  "main": "dist/index.js",
+  "types": "dist/types/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "prepare": "npm run build",
+    "docs": "typedoc src"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/seeyebe/yebe.git"
+  },
+  "bugs": {
+    "url": "https://github.com/seeyebe/yebe/issues"
+  },
+  "homepage": "https://github.com/seeyebe/yebe#readme",
+  "keywords": [
+    "utils",
+    "discord",
+    "typescript",
+    "bot",
+    "utilities",
+    "yebe"
+  ],
+  "author": "seeyebe",
+  "license": "MIT",
+  "dependencies": {
+    "discord.js": "^14.19.3"
+  },
+  "devDependencies": {
+    "typedoc": "^0.28.5"
+  }
+}
