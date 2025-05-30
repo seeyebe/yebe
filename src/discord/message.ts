@@ -503,3 +503,55 @@ export function isBotMentioned(
     message.content.includes(`<@!${client.user?.id}>`)
   );
 }
+
+/**
+ * Creates a direct link to a Discord message
+ * @param message - The message to create a link for
+ * @returns {string} - The URL to the message
+ * @example
+ * // Get a link to the current message
+ * const link = createMessageLink(message);
+ * await message.reply(`Link to this message: ${link}`);
+ *
+ * // Get a link to a referenced message
+ * if (message.reference && message.referenced) {
+ *   const referenceLink = createMessageLink(message.referenced);
+ *   await message.reply(`You're replying to: ${referenceLink}`);
+ * }
+ */
+export function createMessageLink(message: Message): string {
+  if (!message.guild) {
+    // For DM messages, we can't create a link
+    return '';
+  }
+
+  return `https://discord.com/channels/${message.guild.id}/${message.channel.id}/${message.id}`;
+}
+
+/**
+ * Checks if a message is older than a specified duration
+ * @param message - The message to check
+ * @param duration - The duration in milliseconds
+ * @returns {boolean} - True if the message is older than the specified duration
+ * @example
+ * // Check if a message is older than 1 hour
+ * if (isMessageOlderThan(message, 3600000)) {
+ *   await message.reply('This message is more than an hour old.');
+ * }
+ *
+ * // Only allow interactions with messages less than 15 minutes old
+ * if (isMessageOlderThan(message, 900000)) {
+ *   await interaction.reply({
+ *     content: 'This message is too old to interact with.',
+ *     ephemeral: true
+ *   });
+ *   return;
+ * }
+ */
+export function isMessageOlderThan(message: Message, duration: number): boolean {
+  const now = Date.now();
+  const messageTimestamp = message.createdTimestamp;
+  const difference = now - messageTimestamp;
+
+  return difference > duration;
+}
