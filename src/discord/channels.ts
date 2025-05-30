@@ -8,7 +8,6 @@ import {
   BaseGuildTextChannel,
   TextChannel,
   PermissionFlagsBits,
-  GuildTextBasedChannel,
   Channel,
   Message
 } from 'discord.js';

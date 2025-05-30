@@ -15,7 +15,12 @@ import {
   APIEmbed,
   JSONEncodable,
   Interaction,
-  Guild
+  Guild,
+  StringSelectMenuBuilder,
+  StringSelectMenuOptionBuilder,
+  ModalBuilder,
+  TextInputBuilder,
+  TextInputStyle
 } from 'discord.js';
 
 const DEFAULT_TIMEOUT = 60000;
@@ -319,6 +324,197 @@ export function createDisabledButtonRow(
   }
 
   return newRow;
+}
+
+/**
+ * Creates a select menu component with customizable options
+ * @param options - Configuration options for the select menu
+ * @param options.customId - The custom ID for the select menu
+ * @param options.placeholder - The placeholder text to show when nothing is selected
+ * @param options.minValues - Minimum number of values to select (default: 1)
+ * @param options.maxValues - Maximum number of values to select (default: 1)
+ * @param options.choices - Array of choices for the select menu
+ * @returns {ActionRowBuilder<StringSelectMenuBuilder>} - An action row containing the select menu
+ * @example
+ * // Create a simple role selection menu
+ * const roleMenu = createSelectMenu({
+ *   customId: 'role_select',
+ *   placeholder: 'Select your preferred role',
+ *   choices: [
+ *     { label: 'Developer', value: 'dev', description: 'Software developer', emoji: '👨‍💻' },
+ *     { label: 'Designer', value: 'design', description: 'UI/UX designer', emoji: '🎨' },
+ *     { label: 'Manager', value: 'manager', description: 'Project manager', emoji: '📊' }
+ *   ]
+ * });
+ *
+ * await interaction.reply({
+ *   content: 'Please select your role:',
+ *   components: [roleMenu]
+ * });
+ *
+ * // Create a multi-select menu
+ * const languagesMenu = createSelectMenu({
+ *   customId: 'languages',
+ *   placeholder: 'Select programming languages',
+ *   minValues: 1,
+ *   maxValues: 3,
+ *   choices: [
+ *     { label: 'JavaScript', value: 'js' },
+ *     { label: 'Python', value: 'py' },
+ *     { label: 'Java', value: 'java' },
+ *     { label: 'C#', value: 'csharp' },
+ *     { label: 'Go', value: 'go' }
+ *   ]
+ * });
+ */
+export function createSelectMenu(
+  options: {
+    customId: string;
+    placeholder?: string;
+    minValues?: number;
+    maxValues?: number;
+    disabled?: boolean;
+    choices: Array<{
+      label: string;
+      value: string;
+      description?: string;
+      emoji?: string;
+      default?: boolean;
+    }>;
+  }
+): ActionRowBuilder<StringSelectMenuBuilder> {
+  const { customId, placeholder, minValues = 1, maxValues = 1, disabled = false, choices } = options;
+
+  const selectMenu = new StringSelectMenuBuilder()
+    .setCustomId(customId)
+    .setMinValues(minValues)
+    .setMaxValues(maxValues)
+    .setDisabled(disabled);
+
+  if (placeholder) {
+    selectMenu.setPlaceholder(placeholder);
+  }
+
+  const menuOptions = choices.map(choice => {
+    const option = new StringSelectMenuOptionBuilder()
+      .setLabel(choice.label)
+      .setValue(choice.value);
+
+    if (choice.description) {
+      option.setDescription(choice.description);
+    }
+
+    if (choice.emoji) {
+      option.setEmoji(choice.emoji);
+    }
+
+    if (choice.default) {
+      option.setDefault(choice.default);
+    }
+
+    return option;
+  });
+
+  selectMenu.addOptions(menuOptions);
+
+  return new ActionRowBuilder<StringSelectMenuBuilder>()
+    .addComponents(selectMenu);
+}
+
+/**
+ * Creates a modal form with customizable components
+ * @param options - Configuration options for the modal
+ * @param options.customId - The custom ID for the modal
+ * @param options.title - The title of the modal
+ * @param options.components - Array of text input components
+ * @returns {Modal} - The configured modal object ready to be shown
+ * @example
+ * // Create a feedback form modal
+ * const feedbackModal = createModal({
+ *   customId: 'feedback_form',
+ *   title: 'Submit Feedback',
+ *   components: [
+ *     {
+ *       customId: 'name',
+ *       label: 'Your Name',
+ *       style: 'SHORT',
+ *       placeholder: 'foo bar',
+ *       required: true
+ *     },
+ *     {
+ *       customId: 'feedback',
+ *       label: 'Your Feedback',
+ *       style: 'PARAGRAPH',
+ *       placeholder: 'Tell us what you think...',
+ *       required: true,
+ *       maxLength: 1000
+ *     }
+ *   ]
+ * });
+ *
+ * // Show the modal when a button is clicked
+ * client.on('interactionCreate', async (interaction) => {
+ *   if (interaction.isButton() && interaction.customId === 'open_feedback') {
+ *     await interaction.showModal(feedbackModal);
+ *   }
+ * });
+ */
+export function createModal(
+  options: {
+    customId: string;
+    title: string;
+    components: Array<{
+      customId: string;
+      label: string;
+      style: 'SHORT' | 'PARAGRAPH';
+      placeholder?: string;
+      value?: string;
+      required?: boolean;
+      minLength?: number;
+      maxLength?: number;
+    }>;
+  }
+): any {
+  const { customId, title, components } = options;
+
+  const modal = new ModalBuilder()
+    .setCustomId(customId)
+    .setTitle(title);
+
+  const rows = components.map(component => {
+    const textInput = new TextInputBuilder()
+      .setCustomId(component.customId)
+      .setLabel(component.label)
+      .setStyle(component.style === 'SHORT' ? TextInputStyle.Short : TextInputStyle.Paragraph);
+
+    if (component.placeholder) {
+      textInput.setPlaceholder(component.placeholder);
+    }
+
+    if (component.value) {
+      textInput.setValue(component.value);
+    }
+
+    if (component.required !== undefined) {
+      textInput.setRequired(component.required);
+    }
+
+    if (component.minLength) {
+      textInput.setMinLength(component.minLength);
+    }
+
+    if (component.maxLength) {
+      textInput.setMaxLength(component.maxLength);
+    }
+
+    const actionRow = new ActionRowBuilder<TextInputBuilder>();
+    actionRow.addComponents(textInput);
+    return actionRow;
+  });
+
+  modal.addComponents(...rows);
+
+  return modal;
 }
 
 /**
