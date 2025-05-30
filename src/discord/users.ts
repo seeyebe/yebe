@@ -240,7 +240,8 @@ export function checkPermissions(
       if (typeof perm === 'string') {
         missingPerms.push(perm);
       } else {
-        missingPerms.push('Unknown permission');
+        const entry = Object.entries(PermissionFlagsBits).find(([, value]) => value === perm);
+        missingPerms.push(entry?.[0] ?? 'Unknown permission');
       }
     }
   }
