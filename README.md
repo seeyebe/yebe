@@ -19,6 +19,8 @@ npm install yebe
 | `replyWithAutoDelete`  | Replies to a message and deletes it after a delay                     |
 | `waitForMessage`       | Waits for the next message in a channel that matches a filter         |
 | `isBotMentioned`       | Checks if the bot was mentioned in a message                          |
+| `awaitReaction`        | Waits for a user to react to a message with specific emojis           |
+| `batchDeleteMessages`  | Delete multiple messages with advanced filtering options              |
 
 ### Embeds
 
@@ -80,6 +82,9 @@ npm install yebe
 | `canMemberManage`      | Checks if a member can manage another member (role hierarchy)           |
 | `getMemberPermissionsIn` | Gets member's effective permissions in a specific channel             |
 | `checkPermissions`     | Verifies if a member has the required permissions                       |
+| `addMemberRole`        | Adds a role to a member with options for reason and error handling      |
+| `removeMemberRole`     | Removes a role from a member with options for reason and error handling |
+| `bulkRoleManager`      | Add/remove roles for multiple members at once with feedback tracking    |
 
 ### Channels
 
