@@ -10,7 +10,14 @@ import {
   MessageComponentInteraction,
   MessageEditOptions,
   ButtonStyle,
-  User
+  User,
+  MessageReaction,
+  Collection,
+  Snowflake,
+  BaseGuildTextChannel,
+  ThreadChannel,
+  APIMessage,
+  FetchMessagesOptions
 } from 'discord.js';
 
 type ButtonOption = {
@@ -554,4 +561,61 @@ export function isMessageOlderThan(message: Message, duration: number): boolean 
   const difference = now - messageTimestamp;
 
   return difference > duration;
+}
+
+/**
+ * Waits for a user to react to a message with one of the specified emojis
+ * @param message - The message to await reactions on
+ * @param user - The user who should react
+ * @param emojis - Array of emoji strings/identifiers to collect
+ * @param timeout - Time in milliseconds to wait before timing out (default: 60000)
+ * @returns {Promise<MessageReaction | null>} - The reaction object or null if timed out
+ * @example
+ * // Wait for a user to confirm or cancel with reactions
+ * const confirmMessage = await channel.send('React with ✅ to confirm or ❌ to cancel');
+ * const reaction = await awaitReaction(confirmMessage, user, ['✅', '❌']);
+ *
+ * if (reaction?.emoji.name === '✅') {
+ *   await channel.send('Action confirmed!');
+ * } else if (reaction?.emoji.name === '❌') {
+ *   await channel.send('Action cancelled.');
+ * } else {
+ *   await channel.send('No response received, operation timed out.');
+ * }
+ *
+ * // Add reactions to make it easier for users
+ * const pollMessage = await channel.send('Vote on your favorite option:');
+ * const pollEmojis = ['1️⃣', '2️⃣', '3️⃣'];
+ *
+ * for (const emoji of pollEmojis) {
+ *   await pollMessage.react(emoji);
+ * }
+ *
+ * const vote = await awaitReaction(pollMessage, user, pollEmojis, 30000);
+ * if (vote) {
+ *   await channel.send(`You voted for option ${vote.emoji.name}!`);
+ * }
+ */
+export async function awaitReaction(
+  message: Message,
+  user: User,
+  emojis: string[],
+  timeout: number = 60000
+): Promise<MessageReaction | null> {
+  const filter = (reaction: MessageReaction, reactingUser: User) => {
+    return emojis.includes(reaction.emoji.name || reaction.emoji.id || '') && reactingUser.id === user.id;
+  };
+
+  try {
+    const collected = await message.awaitReactions({
+      filter,
+      max: 1,
+      time: timeout,
+      errors: ['time']
+    });
+
+    return collected.first() || null;
+  } catch (error) {
+    return null;
+  }
 }

@@ -513,3 +513,194 @@ export function getUserRoles(
 
   return roles;
 }
+
+/**
+ * Adds a role to a member with options for reason and error handling
+ * @param member - The guild member to add the role to
+ * @param role - The role to add (Role object or role ID)
+ * @param options - Configuration options
+ * @param options.reason - Audit log reason for the role addition
+ * @param options.throwError - Whether to throw an error if the operation fails (default: false)
+ * @returns {Promise<boolean>} - True if successful, false if failed (when not throwing)
+ * @example
+ * // Add a role with a reason
+ * const success = await addMemberRole(
+ *   member,
+ *   welcomeRole,
+ *   { reason: 'New member welcome role' }
+ * );
+ *
+ * if (success) {
+ *   await channel.send(`${member.displayName} received the welcome role!`);
+ * }
+ *
+ * // Add a role by ID with error throwing
+ * try {
+ *   await addMemberRole(member, '123456789012345678', { throwError: true });
+ *   console.log('Role added successfully');
+ * } catch (error) {
+ *   console.error('Failed to add role:', error);
+ * }
+ */
+export async function addMemberRole(
+  member: GuildMember,
+  role: Role | string,
+  options?: {
+    reason?: string;
+    throwError?: boolean;
+  }
+): Promise<boolean> {
+  const { reason, throwError = false } = options || {};
+  const roleId = typeof role === 'string' ? role : role.id;
+
+  try {
+    if (member.roles.cache.has(roleId)) {
+      return true;
+    }
+
+    await member.roles.add(roleId, reason);
+    return true;
+  } catch (error) {
+    if (throwError) {
+      throw error;
+    }
+    return false;
+  }
+}
+
+/**
+ * Removes a role from a member with options for reason and error handling
+ * @param member - The guild member to remove the role from
+ * @param role - The role to remove (Role object or role ID)
+ * @param options - Configuration options
+ * @param options.reason - Audit log reason for the role removal
+ * @param options.throwError - Whether to throw an error if the operation fails (default: false)
+ * @returns {Promise<boolean>} - True if successful, false if failed (when not throwing)
+ * @example
+ * // Remove a muted role with a reason
+ * const success = await removeMemberRole(
+ *   member,
+ *   mutedRole,
+ *   { reason: 'Mute duration expired' }
+ * );
+ *
+ * if (success) {
+ *   await channel.send(`${member.displayName} has been unmuted.`);
+ * }
+ *
+ * // Remove a role by ID with error throwing
+ * try {
+ *   await removeMemberRole(member, '123456789012345678', { throwError: true });
+ *   console.log('Role removed successfully');
+ * } catch (error) {
+ *   console.error('Failed to remove role:', error);
+ * }
+ */
+export async function removeMemberRole(
+  member: GuildMember,
+  role: Role | string,
+  options?: {
+    reason?: string;
+    throwError?: boolean;
+  }
+): Promise<boolean> {
+  const { reason, throwError = false } = options || {};
+  const roleId = typeof role === 'string' ? role : role.id;
+
+  try {
+    if (!member.roles.cache.has(roleId)) {
+      return true;
+    }
+
+    await member.roles.remove(roleId, reason);
+    return true;
+  } catch (error) {
+    if (throwError) {
+      throw error;
+    }
+    return false;
+  }
+}
+
+/**
+ * Add or remove a role from multiple members at once with tracking
+ * @param role - The role to add or remove
+ * @param members - Array of guild members to modify
+ * @param action - Whether to 'add' or 'remove' the role
+ * @param options - Configuration options
+ * @param options.reason - Audit log reason for the role changes
+ * @param options.continueOnError - Whether to continue if an operation fails (default: true)
+ * @returns {Promise<{ success: number; failed: number; errors?: Error[] }>} - Results of the operation
+ * @example
+ * // Add a role to multiple members
+ * const inactiveMembers = await getInactiveMembers(guild, 30); // Members inactive for 30+ days
+ * const results = await bulkRoleManager(
+ *   inactiveRole,
+ *   inactiveMembers,
+ *   'add',
+ *   { reason: 'Marked inactive after 30 days' }
+ * );
+ *
+ * await channel.send(`Role added to ${results.success} members. Failed: ${results.failed}`);
+ *
+ * // Remove a role from multiple members
+ * const subscriberRole = guild.roles.cache.find(r => r.name === 'Subscriber');
+ * const expiredSubscribers = members.filter(m => subscriptionExpired(m));
+ *
+ * const results = await bulkRoleManager(
+ *   subscriberRole,
+ *   expiredSubscribers,
+ *   'remove',
+ *   { reason: 'Subscription expired' }
+ * );
+ */
+export async function bulkRoleManager(
+  role: Role,
+  members: GuildMember[],
+  action: 'add' | 'remove',
+  options?: {
+    reason?: string;
+    continueOnError?: boolean;
+    trackErrors?: boolean;
+  }
+): Promise<{ success: number; failed: number; errors?: Error[] }> {
+  const {
+    reason,
+    continueOnError = true,
+    trackErrors = false
+  } = options || {};
+
+  let successCount = 0;
+  let failedCount = 0;
+  const errors: Error[] = [];
+
+  for (const member of members) {
+    try {
+      const success = action === 'add'
+        ? await addMemberRole(member, role, { reason, throwError: !continueOnError })
+        : await removeMemberRole(member, role, { reason, throwError: !continueOnError });
+
+      if (success) {
+        successCount++;
+      } else {
+        failedCount++;
+      }
+    } catch (error) {
+      failedCount++;
+
+      if (trackErrors && error instanceof Error) {
+        errors.push(error);
+      }
+
+      if (!continueOnError) {
+        throw error;
+      }
+    }
+  }
+
+  return {
+    success: successCount,
+    failed: failedCount,
+    ...(trackErrors && errors.length ? { errors } : {})
+  };
+}
