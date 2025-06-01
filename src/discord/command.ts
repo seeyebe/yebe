@@ -1,6 +1,6 @@
 import {
   Collection,
-  RepliableInteraction
+  RepliableInteraction,
 } from 'discord.js';
 /**
  * Manages cooldowns for commands

@@ -1,97 +1,66 @@
-# yebe
+# Yebe
 
-Reusable TypeScript utilities for Discord bot development.
+[![NPM Version](https://img.shields.io/npm/v/yebe?style=flat-square)](https://www.npmjs.com/package/yebe)
 
-## 📦 Installation
+Yebe provides a collection of well-typed, practical utility functions designed to streamline common tasks and complex interactions when building bots with [Discord.js](https://discord.js.org/). Focus on your bot's unique features, let Yebe handle the boilerplate.
+
+## Installation
 
 ```bash
-npm install yebe
+# Using npm
+npm install yebe discord.js
+
+# Using yarn
+yarn add yebe discord.js
 ```
 
-## 📄 Utility Functions
+> **Note:** `discord.js` is a peer dependency and must be installed alongside `yebe`.
 
-### Messages & Pagination
+## Getting Started
 
-| Function               | Description                                                           |
-|------------------------|-----------------------------------------------------------------------|
-| `sendPaginatedMessage` | Send multi-page content with buttons and optional custom actions      |
-| `splitLongMessage`     | Splits a long message into chunks to avoid Discord's 2000-char limit  |
-| `replyWithAutoDelete`  | Replies to a message and deletes it after a delay                     |
-| `waitForMessage`       | Waits for the next message in a channel that matches a filter         |
-| `isBotMentioned`       | Checks if the bot was mentioned in a message                          |
-| `awaitReaction`        | Waits for a user to react to a message with specific emojis           |
-| `batchDeleteMessages`  | Delete multiple messages with advanced filtering options              |
+Here's a quick example:
 
-### Embeds
+```typescript
+import { Client, GatewayIntentBits } from 'discord.js';
+import { isSafeChannel, awaitUserInput } from 'yebe';
 
-| Function               | Description                                                                 |
-|------------------------|-----------------------------------------------------------------------------|
-| `buildEmbed`           | Creates a custom embed with flexible options                                |
-| `buildSuccessEmbed`    | Pre-styled green embed for success messages                                 |
-| `buildErrorEmbed`      | Pre-styled red embed for error messages                                     |
-| `addFieldChunked`      | Adds large field values in chunks to avoid character limits                 |
-| `chunkEmbedFields`     | Splits large embed field arrays into groups of 25 for Discord compliance    |
-| `buildPaginatedEmbed`  | Sends embeds with pagination controls and interactive buttons               |
+const client = new Client({
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent
+  ]
+});
 
-### Interactions
+client.on('messageCreate', async (message) => {
+  const { channel, author } = message;
 
-| Function                  | Description                                                               |
-|---------------------------|---------------------------------------------------------------------------|
-| `waitButton`              | Waits for a button interaction from a specific user                       |
-| `waitSelectMenu`          | Waits for a select menu interaction from a specific user                  |
-| `interactiveConfirm`      | Sends confirm/cancel buttons and waits for a user decision                |
-| `createButtonRow`         | Builds a row of buttons                                                   |
-| `createDisabledButtonRow` | Creates a disabled version of a button row                                |
-| `collectorWithTimeout`    | Wraps a collector with a timeout and optional end callback                |
-| `isInteractionButton`     | Type guard to check if interaction is a button                            |
-| `isValidInteraction`      | Checks if an interaction is a valid button interaction                    |
+  if (message.content === '!poll' && isSafeChannel(channel)) {
+    await channel.send('What’s your favorite color?');
 
-### Command Utils
+    const reply = await awaitUserInput(channel, author);
+    if (reply) {
+      await channel.send(`You said: ${reply.content}`);
+    } else {
+      await channel.send('No answer received.');
+    }
+  }
+});
 
-| Function             | Description                                                               |
-|----------------------|---------------------------------------------------------------------------|
-| `cooldownManager`    | Tracks per-user command cooldowns                                         |
-| `deferOrReply`       | Abstracts interaction defer/reply/editReply patterns                      |
+client.login('your-bot-token');
 
-### Data Utilities
+```
 
-| Function             | Description                                                               |
-|----------------------|---------------------------------------------------------------------------|
-| `fetchAllMessages`   | Fetches all messages from a channel up to a set limit                     |
-| `getHighestRole`     | Returns the highest role of a guild member                                |
-| `getChannelMention`  | Returns a formatted channel mention string                                |
+This example demonstrates `isSafeChannel` (a type-safe channel guard) and `awaitUserInput`, which collects a message reply from a user.
 
+## Documentation
 
+For detailed information on all available functions, their parameters, return types, and usage examples, please refer to the **[Full API Documentation](https://seeyebe.github.io/yebe/)** (generated by TypeDoc).
 
-### Formatting
+## Contributing
 
-| Function             | Description                                                               |
-|----------------------|---------------------------------------------------------------------------|
-| `formatTimeAgo`      | Creates a human-readable relative time string from a timestamp            |
-| `escapeMarkdown`     | Escapes Discord markdown characters in text                               |
-| `cleanContent`       | Sanitizes mentions and markdown in message content                        |
-| `sanitizeInput`      | Removes potentially dangerous content from user input                     |
+Contributions are welcome! Please feel free to open an issue or submit a pull request if you have suggestions or improvements.
 
-### Users & Members
+## License
 
-| Function               | Description                                                             |
-|------------------------|-------------------------------------------------------------------------|
-| `getUserDisplayName`   | Gets the most appropriate display name for a user                       |
-| `hasAnyRole`           | Checks if a member has any of the specified roles                       |
-| `getMembersByRole`     | Gets all members with a specific role                                   |
-| `canMemberManage`      | Checks if a member can manage another member (role hierarchy)           |
-| `getMemberPermissionsIn` | Gets member's effective permissions in a specific channel             |
-| `checkPermissions`     | Verifies if a member has the required permissions                       |
-| `addMemberRole`        | Adds a role to a member with options for reason and error handling      |
-| `removeMemberRole`     | Removes a role from a member with options for reason and error handling |
-| `bulkRoleManager`      | Add/remove roles for multiple members at once with feedback tracking    |
-
-### Channels
-
-| Function               | Description                                                             |
-|------------------------|-------------------------------------------------------------------------|
-| `findChannelByName`    | Finds a channel by name with optional fuzzy matching                    |
-| `getThreadsInChannel`  | Gets all active threads in a channel                                    |
-| `getVisibleChannels`   | Gets all channels that are visible to a member                          |
-| `isValidChannel`       | Checks if a channel is valid and optionally matches a given type        |
-| `isDM`                 | Checks if a message or channel is from a DM context                     |
+This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details.

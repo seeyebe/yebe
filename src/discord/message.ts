@@ -12,12 +12,6 @@ import {
   ButtonStyle,
   User,
   MessageReaction,
-  Collection,
-  Snowflake,
-  BaseGuildTextChannel,
-  ThreadChannel,
-  APIMessage,
-  FetchMessagesOptions
 } from 'discord.js';
 
 type ButtonOption = {

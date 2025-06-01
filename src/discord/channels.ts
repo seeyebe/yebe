@@ -9,7 +9,9 @@ import {
   TextChannel,
   PermissionFlagsBits,
   Channel,
-  Message
+  Message,
+  DMChannel,
+  GuildTextBasedChannel,
 } from 'discord.js';
 
 /**
@@ -223,4 +225,45 @@ export function isDM(
 ): boolean {
   const targetChannel = 'channel' in channel ? channel.channel : channel;
   return targetChannel.type === 1 || targetChannel.type === 3;
+}
+
+/**
+ * Type guard to check if a channel is safe for messaging or collecting input.
+ * Accepts a raw Channel or an object with a `.channel` property (like Message or Interaction).
+ *
+ * @param input - A Channel or an object containing a channel (e.g., Message, Interaction)
+ * @returns True if the channel is a non-partial DMChannel or a text-capable guild channel
+ *
+ * @example
+ * // Raw channel usage
+ * if (isSafeChannel(channel)) {
+ *   await channel.send('Safe channel');
+ * }
+ *
+ * // With message.channel
+ * if (isSafeChannel(message.channel)) {
+ *   await message.channel.send('Safe message response');
+ * }
+ *
+ * // With interaction.channel
+ * if (isSafeChannel(interaction.channel)) {
+ *   await interaction.channel.send('Safe interaction reply');
+ * }
+ */
+export function isSafeChannel(
+  input: Channel | { channel: Channel }
+): input is { channel: GuildTextBasedChannel | DMChannel } | GuildTextBasedChannel | DMChannel {
+  const actualChannel = 'channel' in input ? input.channel : input;
+
+  if (actualChannel.type === ChannelType.DM) {
+    return !('partial' in actualChannel) || actualChannel.partial === false;
+  }
+
+  return (
+    actualChannel.type === ChannelType.GuildText ||
+    actualChannel.type === ChannelType.GuildAnnouncement ||
+    actualChannel.type === ChannelType.PublicThread ||
+    actualChannel.type === ChannelType.PrivateThread ||
+    actualChannel.type === ChannelType.AnnouncementThread
+  );
 }
