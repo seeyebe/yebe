@@ -9,6 +9,7 @@ import {
   GuildTextBasedChannel,
   ComponentType
 } from 'discord.js';
+import { ButtonOption } from '../utils/types';
 
 /**
  * Builds a custom embed with the provided options
@@ -289,7 +290,7 @@ export function chunkEmbedFields(fields: APIEmbedField[], max = 25): APIEmbedFie
  * ];
  *
  * // Display the paginated embeds with custom options
- * await buildPaginatedEmbed(interaction.channel, helpEmbeds, {
+ * await sendPaginatedEmbed(interaction.channel, helpEmbeds, {
  *   timeout: 120000, // 2 minutes before buttons are disabled
  *   userId: interaction.user.id, // Only the command user can navigate
  *   startPage: 0, // Start at first page
@@ -303,14 +304,14 @@ export function chunkEmbedFields(fields: APIEmbedField[], max = 25): APIEmbedFie
  *   ]
  * });
  */
-export function buildPaginatedEmbed(
+export function sendPaginatedEmbed(
   channel: GuildTextBasedChannel | DMChannel,
   embeds: EmbedBuilder[],
   options?: {
     timeout?: number;
     startPage?: number;
     userId?: string;
-    buttons?: Array<{ id: string; label: string; style: ButtonStyle; callback: (page: number) => number }>;
+    buttons?: ButtonOption[];
   }
 ): Promise<void> {
   return new Promise(async (resolve, reject) => {

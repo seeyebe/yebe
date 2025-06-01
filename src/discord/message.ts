@@ -13,13 +13,7 @@ import {
   User,
   MessageReaction,
 } from 'discord.js';
-
-type ButtonOption = {
-  id: string;
-  label: string;
-  style: 'PRIMARY' | 'SECONDARY' | 'SUCCESS' | 'DANGER';
-  callback: (page: number) => number;
-};
+import { ButtonOption } from '../utils/types';
 
 function buildComponents(
   pageIndex: number,
@@ -52,14 +46,7 @@ function buildComponents(
 
   const extra = (buttons ?? []).map((btn) => ({
     type: 2,
-    style:
-      btn.style === 'PRIMARY'
-        ? ButtonStyle.Primary
-        : btn.style === 'SECONDARY'
-        ? ButtonStyle.Secondary
-        : btn.style === 'SUCCESS'
-        ? ButtonStyle.Success
-        : ButtonStyle.Danger,
+    style: btn.style,
     label: btn.label,
     custom_id: btn.id,
     disabled: false
