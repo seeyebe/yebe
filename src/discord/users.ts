@@ -10,6 +10,9 @@ import {
   DMChannel,
   MessageCreateOptions,
   MessagePayload,
+  VoiceChannel,
+  StageChannel,
+  VoiceBasedChannel
 } from 'discord.js';
 
 /**
@@ -703,4 +706,127 @@ export async function bulkRoleManager(
     failed: failedCount,
     ...(trackErrors && errors.length ? { errors } : {})
   };
+}
+
+/**
+ * Move a user from one voice channel to another
+ * @param member - The guild member to move
+ * @param targetChannel - The voice channel to move the member to
+ * @param options - Configuration options
+ * @param options.reason - Audit log reason for the move
+ * @param options.checkPermissions - Whether to check if bot has permission to move (default: true)
+ * @returns {Promise<boolean>} - True if successful, false otherwise
+ * @example
+ * // Move a member to a specific voice channel
+ * const success = await moveUserToChannel(member, voiceChannel, {
+ *   reason: 'Moving user to team voice channel'
+ * });
+ *
+ * if (success) {
+ *   console.log(`${member.displayName} moved to ${voiceChannel.name}`);
+ * } else {
+ *   console.log('Failed to move user - they may not be in a voice channel');
+ * }
+ *
+ * // Move without permission checking (use with caution)
+ * await moveUserToChannel(member, targetChannel, { checkPermissions: false });
+ */
+export async function moveUserToChannel(
+  member: GuildMember,
+  targetChannel: VoiceChannel | StageChannel | null,
+  options: {
+    reason?: string;
+    checkPermissions?: boolean;
+  } = {}
+): Promise<boolean> {
+  const { reason, checkPermissions = true } = options;
+
+  try {
+    if (!member.voice.channel) {
+      return false;
+    }
+
+    if (checkPermissions) {
+      const botMember = member.guild.members.me;
+      if (!botMember?.permissions.has(PermissionFlagsBits.MoveMembers)) {
+        throw new Error('Bot does not have permission to move members');
+      }
+
+      if (targetChannel && !targetChannel.permissionsFor(botMember)?.has(PermissionFlagsBits.Connect)) {
+        throw new Error('Bot does not have permission to connect to target channel');
+      }
+    }
+
+    await member.voice.setChannel(targetChannel, reason);
+    return true;
+  } catch (error) {
+    console.error('Error moving user to channel:', error);
+    return false;
+  }
+}
+
+/**
+ * Get all members currently in voice channels within a guild
+ * @param guild - The guild to search for voice channel members
+ * @param options - Configuration options
+ * @param options.includeAfk - Whether to include members in AFK channel (default: true)
+ * @param options.includeBots - Whether to include bot users (default: false)
+ * @param options.channelFilter - Filter function to only include specific channels
+ * @returns {Promise<Map<string, GuildMember[]>>} - Map of channel IDs to arrays of members
+ * @example
+ * // Get all members in voice channels
+ * const voiceMembers = await getVoiceChannelMembers(guild);
+ *
+ * for (const [channelId, members] of voiceMembers) {
+ *   const channel = guild.channels.cache.get(channelId);
+ *   console.log(`${channel?.name}: ${members.length} members`);
+ * }
+ *
+ * // Get only members in non-AFK channels, excluding bots
+ * const activeVoice = await getVoiceChannelMembers(guild, {
+ *   includeAfk: false,
+ *   includeBots: false
+ * });
+ *
+ * // Filter to only include specific channels
+ * const teamChannels = await getVoiceChannelMembers(guild, {
+ *   channelFilter: (channel) => channel.name.includes('Team')
+ * });
+ */
+export async function getVoiceChannelMembers(
+  guild: Guild,
+  options: {
+    includeAfk?: boolean;
+    includeBots?: boolean;
+    channelFilter?: (channel: VoiceBasedChannel) => boolean;
+  } = {}
+): Promise<Map<string, GuildMember[]>> {
+  const { includeAfk = true, includeBots = false, channelFilter } = options;
+
+  const voiceMembers = new Map<string, GuildMember[]>();
+
+  const voiceChannels = guild.channels.cache.filter(channel =>
+    channel.isVoiceBased() &&
+    (includeAfk || channel.id !== guild.afkChannelId) &&
+    (!channelFilter || channelFilter(channel as VoiceBasedChannel))
+  );
+
+  for (const [channelId, channel] of voiceChannels) {
+    const voiceChannel = channel as VoiceBasedChannel;
+    const members: GuildMember[] = [];
+
+    for (const [memberId, member] of voiceChannel.members) {
+      if (!includeBots && member.user.bot) {
+        continue;
+      }
+
+      members.push(member);
+    }
+
+    if (members.length > 0) {
+      voiceMembers.set(channelId, members);
+    }
+  }
+
+  return voiceMembers;
 }

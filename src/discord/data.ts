@@ -4,6 +4,10 @@ import {
   Message,
   Role,
   TextBasedChannel,
+  Guild,
+  GuildAuditLogsEntry,
+  AuditLogEvent,
+  User,
 } from 'discord.js';
 
 /**
@@ -92,4 +96,118 @@ export function getHighestRole(
  */
 export function getChannelMention(id: string): string {
   return `<#${id}>`;
+}
+
+/**
+ * Search and filter audit log entries with comprehensive filtering options
+ * @param guild - The guild to search audit logs in
+ * @param options - Configuration options for the search
+ * @param options.type - Specific audit log event type to filter by
+ * @param options.user - User who performed the action
+ * @param options.target - Target user/entity of the action
+ * @param options.limit - Maximum number of entries to fetch (default: 50)
+ * @param options.before - Fetch entries before this entry ID
+ * @param options.after - Fetch entries after this date
+ * @param options.reason - Filter by audit log reason (partial match)
+ * @param options.customFilter - Custom filter function for advanced filtering
+ * @returns {Promise<GuildAuditLogsEntry[]>} - Array of matching audit log entries
+ * @example
+ * // Find all ban actions in the last 24 hours
+ * const banEntries = await auditLogSearch(guild, {
+ *   type: AuditLogEvent.MemberBanAdd,
+ *   after: new Date(Date.now() - 24 * 60 * 60 * 1000)
+ * });
+ *
+ * // Find actions performed by a specific moderator
+ * const modActions = await auditLogSearch(guild, {
+ *   user: moderatorId,
+ *   limit: 100
+ * });
+ *
+ * // Find role changes with specific reason
+ * const roleChanges = await auditLogSearch(guild, {
+ *   type: AuditLogEvent.MemberRoleUpdate,
+ *   reason: 'promotion'
+ * });
+ *
+ * // Advanced filtering with custom function
+ * const complexSearch = await auditLogSearch(guild, {
+ *   customFilter: (entry) => {
+ *     return entry.changes &&
+ *            entry.changes.some(change => change.key === 'nick') &&
+ *            entry.createdTimestamp > Date.now() - 7 * 24 * 60 * 60 * 1000;
+ *   }
+ * });
+ */
+export async function auditLogSearch(
+  guild: Guild,
+  options: {
+    type?: AuditLogEvent;
+    user?: string | User;
+    target?: string | User;
+    limit?: number;
+    before?: string;
+    after?: Date;
+    reason?: string;
+    customFilter?: (entry: GuildAuditLogsEntry) => boolean;
+  } = {}
+): Promise<GuildAuditLogsEntry[]> {
+  const {
+    type,
+    user,
+    target,
+    limit = 50,
+    before,
+    after,
+    reason,
+    customFilter
+  } = options;
+
+  const botMember = guild.members.me;
+  if (!botMember?.permissions.has('ViewAuditLog')) {
+    throw new Error('Bot does not have permission to view audit logs');
+  }
+
+  const fetchOptions: any = { limit };
+
+  if (type !== undefined) {
+    fetchOptions.type = type;
+  }
+
+  if (user) {
+    fetchOptions.user = typeof user === 'string' ? user : user.id;
+  }
+
+  if (before) {
+    fetchOptions.before = before;
+  }
+
+  try {
+    const auditLogs = await guild.fetchAuditLogs(fetchOptions);
+    let entries = Array.from(auditLogs.entries.values());
+
+    if (target) {
+      const targetId = typeof target === 'string' ? target : target.id;
+      entries = entries.filter(entry => entry.targetId === targetId);
+    }
+
+    if (after) {
+      entries = entries.filter(entry => entry.createdTimestamp > after.getTime());
+    }
+
+    if (reason) {
+      entries = entries.filter(entry =>
+        entry.reason && entry.reason.toLowerCase().includes(reason.toLowerCase())
+      );
+    }
+
+    if (customFilter) {
+      entries = entries.filter(customFilter);
+    }
+
+    return entries;
+  } catch (error) {
+    console.error('Error fetching audit logs:', error);
+    throw new Error(`Failed to fetch audit logs: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
 }
